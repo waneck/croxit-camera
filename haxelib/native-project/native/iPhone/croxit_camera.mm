@@ -317,6 +317,7 @@ DEFINE_PRIM(cdis_iget_orientation, 1);
 			ret = alloc_string([path UTF8String]);
 	} else {
 		UIImage* image = [resultInfo objectForKey:UIImagePickerControllerOriginalImage];
+		NSLog(@"image data is null? %d", !image);
 		
 		if (!image)
 			ret = val_null;
@@ -326,7 +327,7 @@ DEFINE_PRIM(cdis_iget_orientation, 1);
 	
 	if (pickerController->result && pickerController->result->get())
 	{
-		if (val_is_null(ret))
+		if (val_null == ret)
 		{
 			//user cancelled
 			val_call2(pickerController->result->get(), alloc_int(1), val_null);
