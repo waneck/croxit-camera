@@ -1,0 +1,33 @@
+<xml>
+
+<include name="${HXCPP}/build-tool/BuildCommon.xml"/>
+
+<set name="mobile" value="1" if="iphone"/>
+<set name="mobile" value="1" if="android"/>
+<set name="mobile" value="1" if="webos"/>
+<set name="mobile" value="1" if="gph"/>
+
+<set name="tool" value="exe" unless="iphone"/>
+<set name="tool" value="static" if="iphone"/>
+
+<set name="IOS_ARCH" value="-v7" if="HXCPP_ARMV7" />
+
+<set name="LIBEXTRA" value=".iphoneos${IOS_ARCH}" if="iphoneos"/>
+<set name="LIBEXTRA" value=".iphonesim" if="iphonesim"/>
+<set name="LIBPREFIX" value="lib" if="iphoneos"/>
+<set name="LIBPREFIX" value="lib" if="iphonesim"/>
+
+<files id="ios_croxit_camera" dir="./">
+	<file name="native/iPhone/croxit_camera.mm"/>
+</files>
+
+<target id="croxit_camera" output="${LIBPREFIX}croxit_camera${DBG}${LIBEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+	<ext value=".ndll" unless="mobile"/>
+	<files id="ios_croxit_camera" if="iphone"/>
+	<outdir name="../ndll/${BINDIR}"/>
+</target>
+
+<target id="default"> 
+	<target id="croxit_camera" />  
+</target>
+</xml>
