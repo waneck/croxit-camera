@@ -16,7 +16,7 @@ class CameraMock extends Camera
 	
 	public function getPicture(source:CameraSource, onResult:Null<Image>->Void):Void
 	{
-		//default mocking behaviour is that user fails every time
+		//default mocking behaviour is that user cancels every time
 		onResult(null);
 	}
 	

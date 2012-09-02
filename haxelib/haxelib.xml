@@ -8,6 +8,6 @@
     <tag v="neko"/>
     <tag v="hxcpp"/>
     <description>Camera plugin for Croxit</description>
-    <version name="0.0.1">First commit.</version>
+    <version name="0.0.2">Fixed support for image resize, and added image orientation normalization</version>
 	<depends name="croxit-1"/>
 </project>

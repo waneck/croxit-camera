@@ -41,10 +41,13 @@ class Camera
 		cameraInterface = ciface;
 	}
 	
-	private static var cameraInterface:Camera
+	private static var cameraInterface:Camera;
 #if iphone
-		= new croxit.camera.targets.base.Camera()
-#end;
+	static function __init__()
+	{
+		cameraInterface = new croxit.camera.targets.base.Camera();
+	}
+#end
 	
 	private function _getPicture(source:CameraSource, onResult:CameraResult->Void):Void
 	{

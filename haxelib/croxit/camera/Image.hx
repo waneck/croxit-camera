@@ -1,4 +1,5 @@
 package croxit.camera;
+import croxit.camera.CameraSource;
 import croxit.camera.EncodingType;
 import croxit.core.Loader;
 import haxe.io.Bytes;
@@ -26,7 +27,16 @@ class Image
 	 **/
 	public function resize(newWidth:Float, newHeight:Float):Image
 	{
+		if (handle == null) throw "Disposed";
 		return new Image(_resize(handle, newWidth, newHeight));
+	}
+	
+	/**
+	 *  Disposes image handle
+	 **/
+	public function dispose():Void
+	{
+		handle = null;
 	}
 	
 	/**
@@ -34,6 +44,7 @@ class Image
 	 **/
 	public function getCompressed(encoding:EncodingType):Bytes
 	{
+		if (handle == null) throw "Disposed";
 		var type = 0;
 		var quality:Null<Float> = null;
 		switch(encoding)
@@ -52,24 +63,26 @@ class Image
 	 **/
 	public function getOrientation():ImageOrientation
 	{
+		if (handle == null) throw "Disposed";
 		return Type.createEnumIndex(ImageOrientation, _get_orientation(handle));
 	}
 	
 	/**
 	 *  If the current orientation is different from "Up", returns a new rotated Image object.
 	 *  If it is already "Up", it returns itself.
-	 **//*
+	 **/
 	public function normalizeRotation():Image
 	{
 		return switch(getOrientation())
 		{
-		case OUp: this;
+		case OUp: new Image(this.handle);
 		default: new Image(_normalize(handle));
 		}
-	}*/
+	}
 	
 	public static function ofHandle(handle):Image
 	{
+		if (handle == null) throw "Disposed";
 		if (handle == null)
 			return null;
 		return new Image(handle);
@@ -82,11 +95,13 @@ class Image
 	
 	private function get_width() : Float
 	{
+		if (handle == null) throw "Disposed";
 		return _get_width(handle);
 	}
 	
 	private function get_height():Float
 	{
+		if (handle == null) throw "Disposed";
 		return _get_height(handle);
 	}
 	
@@ -96,13 +111,5 @@ class Image
 	private static var _of_file = Loader.loadExt("croxit_display", "cdis_i_of_file", 1);
 	private static var _resize = Loader.loadExt("croxit_display", "cdis_iresize", 3);
 	private static var _compressed = Loader.loadExt("croxit_display", "cdis_icompressed", 3);
-	//private static var _normalize = Loader.loadExt("croxit_display", "cdis_normalize", 3);
-}
-
-enum ImageOrientation
-{
-	OUp;
-	ODown;
-	ORight;
-	OLeft;
+	private static var _normalize = Loader.loadExt("croxit_display", "cdis_normalize", 1);
 }

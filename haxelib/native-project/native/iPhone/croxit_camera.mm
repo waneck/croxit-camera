@@ -66,113 +66,125 @@ value cdis_i_of_file(value path)
 
 DEFINE_PRIM(cdis_i_of_file, 1);
 
+value cdis_normalize(value aimg)
+{
+	//modified code from PhoneGap
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	UIImage *sourceImage = img_of_value(aimg);
+	float rotation_radians = 0;
+	  bool perpendicular = false;
+	  switch ([sourceImage imageOrientation]) {
+	   case UIImageOrientationUp:
+	     rotation_radians = 0.0;
+	     break;
+	   case UIImageOrientationDown:   
+	     rotation_radians = M_PI;
+	     break;
+	   case UIImageOrientationRight:
+	     rotation_radians = M_PI_2;
+	     perpendicular = true;
+	     break;
+	   case UIImageOrientationLeft:
+	     rotation_radians = -M_PI_2;
+	     perpendicular = true;
+	     break;
+	   default:
+	     break;
+	  }
+
+	  UIGraphicsBeginImageContext(CGSizeMake(sourceImage.size.width, sourceImage.size.height));
+	  CGContextRef context = UIGraphicsGetCurrentContext();
+
+	  //Rotate around the center point
+	  CGContextTranslateCTM(context, sourceImage.size.width/2, sourceImage.size.height/2);
+	  CGContextRotateCTM(context, rotation_radians);
+
+	  CGContextScaleCTM(context, 1.0, -1.0);
+	  float width = perpendicular ? sourceImage.size.height : sourceImage.size.width;
+	  float height = perpendicular ? sourceImage.size.width : sourceImage.size.height;
+	  CGContextDrawImage(context, CGRectMake(-width / 2, -height / 2, width, height), [sourceImage CGImage]);
+
+	  // Move the origin back since the rotation might've change it (if its 90 degrees)
+	  if (perpendicular) {
+		CGContextTranslateCTM(context, -sourceImage.size.height/2, -sourceImage.size.width/2);
+	  }
+	  
+	  UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+	  UIGraphicsEndImageContext();
+	  value ret = value_of_img(newImage);
+
+	  [pool release];
+	  return ret;
+}
+
+DEFINE_PRIM(cdis_normalize, 1)
+
 value cdis_iresize(value aimg, value targetWidthv, value targetHeightv)
 {
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	
 	val_check(targetWidthv, float);
 	val_check(targetHeightv, float);
 	UIImage *sourceImage = img_of_value(aimg);
-	CGSize imageSize = [sourceImage size];
-	CGFloat width = imageSize.width;
-    CGFloat height = imageSize.height;
 	CGFloat targetWidth = val_float(targetWidthv);
     CGFloat targetHeight = val_float(targetHeightv);
-	CGFloat scaleFactor = 0.0;
-	CGFloat scaledWidth = targetWidth;
-	CGFloat scaledHeight = targetHeight;
-	CGPoint thumbnailPoint = CGPointMake(0.0,0.0);
-
-	if (width == targetWidth && height == targetHeight)
-	{
-		return aimg;
-	}
 	
-	CGFloat widthFactor = targetWidth / width;
-	CGFloat heightFactor = targetHeight / height;
-
-	if (widthFactor > heightFactor)
-	{
-		scaleFactor = widthFactor; // scale to fit height
-	}
-	else
-	{
-		scaleFactor = heightFactor; // scale to fit width
-	}
-
-	scaledWidth  = width * scaleFactor;
-	scaledHeight = height * scaleFactor;
-
-	// center the image
-	if (widthFactor > heightFactor)
-	{
-		thumbnailPoint.y = (targetHeight - scaledHeight) * 0.5; 
-	}
-	else if (widthFactor < heightFactor)
-	{
-		thumbnailPoint.x = (targetWidth - scaledWidth) * 0.5;
-	}
-
-	CGContextRef bitmap;
-	CGImageRef imageRef = [sourceImage CGImage];
-	CGColorSpaceRef genericColorSpace = CGColorSpaceCreateDeviceRGB();
-	if (sourceImage.imageOrientation == UIImageOrientationUp || sourceImage.imageOrientation == UIImageOrientationDown)
-	{
-	    bitmap = CGBitmapContextCreate(NULL, targetWidth, targetHeight, 8, 4 * targetWidth, genericColorSpace, kCGImageAlphaPremultipliedFirst);
-
-	}
-	else
-	{
-	    bitmap = CGBitmapContextCreate(NULL, targetHeight, targetWidth, 8, 4 * targetWidth, genericColorSpace, kCGImageAlphaPremultipliedFirst);
-
-	}   
-
-	CGColorSpaceRelease(genericColorSpace);
-	CGContextSetInterpolationQuality(bitmap, kCGInterpolationDefault);
-
-	// In the right or left cases, we need to switch scaledWidth and scaledHeight,
-	// and also the thumbnail point
-	if (sourceImage.imageOrientation == UIImageOrientationLeft)
-	{
-	    thumbnailPoint = CGPointMake(thumbnailPoint.y, thumbnailPoint.x);
-	    CGFloat oldScaledWidth = scaledWidth;
-	    scaledWidth = scaledHeight;
-	    scaledHeight = oldScaledWidth;
-
-	    CGContextRotateCTM (bitmap, radians(90));
-	    CGContextTranslateCTM (bitmap, 0, -targetHeight);
-
-	}
-	else if (sourceImage.imageOrientation == UIImageOrientationRight)
-	{
-	    thumbnailPoint = CGPointMake(thumbnailPoint.y, thumbnailPoint.x);
-	    CGFloat oldScaledWidth = scaledWidth;
-	    scaledWidth = scaledHeight;
-	    scaledHeight = oldScaledWidth;
-
-	    CGContextRotateCTM (bitmap, radians(-90));
-	    CGContextTranslateCTM (bitmap, -targetWidth, 0);
-
-	}
-	else if (sourceImage.imageOrientation == UIImageOrientationUp)
-	{
-	    // NOTHING
-	}
-	else if (sourceImage.imageOrientation == UIImageOrientationDown)
-	{
-	    CGContextTranslateCTM (bitmap, targetWidth, targetHeight);
-	    CGContextRotateCTM (bitmap, radians(-180.));
-	}
-
-	CGContextDrawImage(bitmap, CGRectMake(thumbnailPoint.x, thumbnailPoint.y, scaledWidth, scaledHeight), imageRef);
-	CGImageRef ref = CGBitmapContextCreateImage(bitmap);
-	UIImage* newImage = [[UIImage alloc] initWithCGImage:ref];
-
-	CGContextRelease(bitmap);
-	CGImageRelease(ref);
+	CGSize targetSize = CGSizeMake(targetWidth, targetHeight);
 	
+    UIImage *newImage = nil;        
+    CGSize imageSize = sourceImage.size;
+    CGFloat width = imageSize.width;
+    CGFloat height = imageSize.height;
+    CGFloat scaleFactor = 0.0;
+    CGFloat scaledWidth = targetWidth;
+    CGFloat scaledHeight = targetHeight;
+    CGPoint thumbnailPoint = CGPointMake(0.0,0.0);
+
+    if (CGSizeEqualToSize(imageSize, targetSize) == NO) 
+    {
+        CGFloat widthFactor = targetWidth / width;
+        CGFloat heightFactor = targetHeight / height;
+
+        if (widthFactor > heightFactor) 
+            scaleFactor = widthFactor; // scale to fit height
+        else
+            scaleFactor = heightFactor; // scale to fit width
+        scaledWidth  = width * scaleFactor;
+        scaledHeight = height * scaleFactor;
+
+        // center the image
+        if (widthFactor > heightFactor)
+        {
+            thumbnailPoint.y = (targetHeight - scaledHeight) * 0.5; 
+        }
+        else 
+            if (widthFactor < heightFactor)
+            {
+                thumbnailPoint.x = (targetWidth - scaledWidth) * 0.5;
+            }
+    }       
+
+    UIGraphicsBeginImageContext(targetSize); // this will crop
+
+    CGRect thumbnailRect = CGRectZero;
+    thumbnailRect.origin = thumbnailPoint;
+    thumbnailRect.size.width  = scaledWidth;
+    thumbnailRect.size.height = scaledHeight;
+
+    [sourceImage drawInRect:thumbnailRect];
+
+    newImage = UIGraphicsGetImageFromCurrentImageContext();
+    if(newImage == nil) 
+	{
+        NSLog(@"could not scale image");
+	}
+
+    //pop the context to get back to the default
+    UIGraphicsEndImageContext();
 	value ret = value_of_img(newImage);
-	[newImage release];
 	
-	return ret;
+	[pool release];
+    return ret;
 }
 
 DEFINE_PRIM(cdis_iresize, 3);

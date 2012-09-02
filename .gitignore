@@ -2,3 +2,5 @@ obj
 haxelib/ndll/iPhone/.DS_Store
 
 .DS_Store
+
+haxelib/native-project/all_objs
