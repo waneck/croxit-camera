@@ -4,7 +4,7 @@ import croxit.camera.CameraSource;
 import croxit.camera.Image;
 import croxit.core.Loader;
 
-class Camera extends croxit.camera.Camera
+@:keep class Camera extends croxit.camera.Camera
 {
 	static function __init__()
 	{
