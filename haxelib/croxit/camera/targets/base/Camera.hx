@@ -6,11 +6,17 @@ import croxit.core.Loader;
 
 class Camera extends croxit.camera.Camera
 {
+	static function __init__()
+	{
+		#if !haxe3 untyped #end
+		croxit.camera.Camera.cameraInterface = new croxit.camera.targets.base.Camera();
+	}
+
 	public function new()
 	{
-		
+
 	}
-	
+
 	override private function _getPicture(source:CameraSource, onResult:CameraResult->Void):Void
 	{
 		_get_picture(Type.enumIndex(source), 0, function(res:Int, hnd:Dynamic) {
@@ -23,16 +29,16 @@ class Camera extends croxit.camera.Camera
 			case 4: Error(hnd);
 			default: Error("Invalid result number " + res);
 			};
-			
+
 			onResult(res);
 		});
 	}
-	
+
 	override private function _isSourceAvailable(source:CameraSource):Bool
 	{
 		return _source_avail(Type.enumIndex(source));
 	}
-	
+
 	static var _get_picture:Dynamic = Loader.loadExt("croxit_display", "cdis_get_picture", 3);
 	static var _source_avail:Dynamic = Loader.loadExt("croxit_display", "cdis_source_avail", 1);
 }

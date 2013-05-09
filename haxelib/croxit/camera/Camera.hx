@@ -1,5 +1,8 @@
 package croxit.camera;
 import croxit.camera.Image;
+// #if iphone
+import croxit.camera.targets.base.Camera;
+// #end
 //http://stackoverflow.com/questions/1282830/uiimagepickercontroller-uiimage-memory-and-more
 
 /**
@@ -9,7 +12,7 @@ class Camera
 {
 	/**
 	 *  Shows the native UI to either take a picture, or select one from the library.
-	 *  
+	 *
 	 *  @param	source		determines the source of the picture
 	 *  @param	onResult	callback when a result is available
 	 **/
@@ -20,7 +23,7 @@ class Camera
 		else
 			cameraInterface._getPicture(source, onResult);
 	}
-	
+
 	/**
 	 *  Queries the system if a specific source is available.
 	 **/
@@ -32,7 +35,7 @@ class Camera
 		else
 			return cameraInterface._isSourceAvailable(source);
 	}
-	
+
 	/**
 	 *  Sets an alternate camera interface (e.g. for mocking purposes)
 	 **/
@@ -40,20 +43,14 @@ class Camera
 	{
 		cameraInterface = ciface;
 	}
-	
-	private static var cameraInterface:Camera;
-#if iphone
-	static function __init__()
-	{
-		cameraInterface = new croxit.camera.targets.base.Camera();
-	}
-#end
-	
+
+	@:allow(croxit.camera.targets) private static var cameraInterface:Camera;
+
 	private function _getPicture(source:CameraSource, onResult:CameraResult->Void):Void
 	{
 		onResult(Error("Camera interface not available"));
 	}
-	
+
 	private function _isSourceAvailable(source:CameraSource):Bool
 	{
 		return false;
